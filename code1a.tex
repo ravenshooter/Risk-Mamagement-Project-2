@@ -1,0 +1,61 @@
+\begin{lstlisting}
+
+library(stats4)
+library(MASS)
+library(gPdtest)
+library(ggplot2)
+
+data = read.csv('winter-negative-temperature-sum-.csv')
+vals = as.matrix(data[,2])
+
+n = length(vals)
+
+# Plot the time series
+data_overview = data.frame(year=data[,1], temp=data[,2])
+
+# Plot histogram, mean and median
+ggplot(data_overview, aes(x=year, y=temp)) + geom_line()
+(ggplot(data_overview, aes(x=temp)) 
+  + geom_histogram()
+  + geom_vline(xintercept = mean(vals), col="Red")
+  + geom_vline(xintercept = median(vals), col="Blue"))
+
+
+################# FIT DIFFERENT DISTRIBUTIONS #######################
+
+# Scale the values for fitting the Chi Square,
+#doesn't impact the other distributions
+vals = vals/35
+
+# Fit a normal around the data
+fittednorm = fitdistr(vals, "normal")$estimate
+qqplot(qnorm((n-seq(1,n)+1)/(n+1))*fittednorm[2]+fittednorm[1], vals,
+ylab="Empirical Quantiles", xlab="Normal Quantiles")
+abline(0,1)
+
+# Fit an exponential around the data
+fittedexp = fitdistr(vals, "exponential")$estimate
+qqplot(qexp((n-seq(1,n)+1)/(n+1), rate=fittedexp[1]), vals,
+ylab="Empirical Quantiles", xlab="Exponential Quantiles")
+qqline(vals, distribution = function(q){qexp(q,rate=fittedexp[1])})
+
+# Fit a weibull around the data
+fittedw<-fitdistr(vals, "weibull")$estimate
+qqplot(qweibull((n-seq(1,n)+1)/(n+1),shape=fittedw[1], scale=fittedw[2]), vals, ylab="Empirical Quantiles", xlab="Weibull Quantiles")
+abline(0,1)
+
+# Fit a chi square around the data
+fittedchi<-fitdistr(vals, "chi-squared", start=list(df=2))$estimate
+qqplot(qchisq((n-seq(1,n)+1)/(n+1), df=fittedchi[1]), vals, ylab="Empirical Quantiles", xlab="Chi-Square quantiles")
+abline(0,1)
+
+
+# Plot a histogram and the different theoretical distributions
+x = seq(0,30, length=100)
+hist(vals, freq=FALSE, breaks=20)
+lines(x,dchisq(x, df=fittedchi[1]), col='green')
+lines(x,dweibull(x, shape=fittedw[1], scale=fittedw[2]), col='blue')
+lines(x,dnorm(x, mean=fittednorm[1], sd=fittednorm[2]), col='red')
+lines(x,dexp(x, rate=fittedexp[1]), col='yellow')
+
+\end{lstlisting}

@@ -1,0 +1,42 @@
+To analyze the right tail of the dataset the following code hase been used. Libraries \textbf{ismev} and \textbf{evir} have been used.
+\begin{lstlisting}
+#going back to non-rescaled values
+vals = 35*vals
+
+par(mar=c(2,2,2,2))
+#plotting the confidence intervals for paratemters of fittend 
+#GPD changing the threshold
+gpd.fitrange(vals, umin=300, umax=550)
+title("Confidence interval for shape and scale varying threshold")
+#considering this plot and the size our sample we decide to cut in 380
+my_threshold = 380
+
+ecdf(vals)(my_threshold)
+#the percentage of dataset above the threshold is the 20%
+my_gpd<-gpd(vals,my_threshold)
+my_gpd$par.ests
+
+#Save the parameters obtained with maximum likelihood
+gamma = my_gpd$par.ests[1]
+beta  = my_gpd$par.ests[2]
+
+#let us evaluate the goodness of fit with a q-q plot
+qplot(vals, threshold=my_threshold,gamma)
+
+#plot the distribution over the histogram of the tail
+x = seq(0,max(vals)-my_threshold, length=100)
+hist(vals[vals>my_threshold], freq=FALSE,+
+    breaks=seq(my_threshold,780,30), main="Histogram of values over threshold", legend="GPD approximation")
+lines(x+my_threshold,dGPD(x, gamma, beta), col='green')
+\end{lstlisting}
+
+Using the generalized Pareto distribution fitted with the script above, the quantile of $1-1/2n$, where n is the number of observations in the dataset, has been obtained with the following implementation
+\begin{lstlisting}
+#evaluation of quantile
+n = length(vals)
+p = 1-1/(2*n)
+my_p = -((1-p)*length(vals)/length(vals[vals>my_threshold])-1);
+quantile_p = my_threshold+qGPD(my_p,gamma,beta)
+#the empirical closest quantile we have is:
+quantile(vals, p)
+\end{lstlisting}
